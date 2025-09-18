@@ -2,10 +2,309 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>ElevenLabs ConvAI Agent</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Permissions-Policy" content="microphone=(), camera=()">
+  <title>Earth-2 AI Weather Expert - AMS 2026</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    
+    #startup-container {
+      text-align: center;
+      background: white;
+      padding: 3rem;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 500px;
+      margin: 20px;
+    }
+    
+    #startup-container h1 {
+      color: #333;
+      margin-bottom: 1rem;
+      font-size: 2rem;
+    }
+    
+    #startup-container p {
+      color: #666;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    
+    .start-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .start-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .start-button:active {
+      transform: translateY(0);
+    }
+    
+    .text-mode-button {
+      background: transparent;
+      color: #667eea;
+      border: 2px solid #667eea;
+      margin-top: 1rem;
+      padding: 0.8rem 2rem;
+      font-size: 1rem;
+    }
+    
+    #agent-container {
+      display: none;
+      width: 100%;
+      height: 100vh;
+      position: relative;
+      background: white;
+    }
+    
+    #error-message {
+      display: none;
+      background: #ff4444;
+      color: white;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-top: 1rem;
+    }
+    
+    .loading {
+      display: none;
+      color: #666;
+      margin-top: 1rem;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0,0,0,.1);
+      border-radius: 50%;
+      border-top-color: #667eea;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    #status-bar {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 0.9rem;
+      display: none;
+      z-index: 1000;
+    }
+  </style>
 </head>
-<body style="margin:0; padding:0;">
-  <elevenlabs-convai agent-id="agent_0601k5f668q9fqj8xq8c2fz49fqm"></elevenlabs-convai>
-  <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+<body>
+  <!-- Initial startup screen -->
+  <div id="startup-container">
+    <h1>🌍 Earth-2 AI Weather Expert</h1>
+    <p>
+      Welcome to NVIDIA's Earth2Studio Interactive Demo!<br>
+      Click below to start talking with our AI weather expert.
+    </p>
+    
+    <button id="start-voice" class="start-button">
+      🎤 Start Voice Chat
+    </button>
+    
+    <br>
+    
+    <button id="start-text" class="start-button text-mode-button">
+      ⌨️ Text Chat Only
+    </button>
+    
+    <div id="error-message"></div>
+    <div class="loading">
+      <div class="spinner"></div>
+      <span> Initializing AI agent...</span>
+    </div>
+    
+    <p style="margin-top: 2rem; font-size: 0.9rem; color: #999;">
+      Powered by ElevenLabs AI • NVIDIA Earth2Studio
+    </p>
+  </div>
+  
+  <!-- Agent container (hidden initially) -->
+  <div id="agent-container">
+    <div id="status-bar">🟢 Connected</div>
+    <elevenlabs-convai 
+      agent-id="agent_0601k5f668q9fqj8xq8c2fz49fqm"
+      enable-text-input="true">
+    </elevenlabs-convai>
+  </div>
+  
+  <script>
+    // Configuration
+    const AGENT_ID = 'agent_0601k5f668q9fqj8xq8c2fz49fqm';
+    let agentLoaded = false;
+    let audioPermissionGranted = false;
+    
+    // Utility functions
+    function showError(message) {
+      const errorEl = document.getElementById('error-message');
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+      document.querySelector('.loading').style.display = 'none';
+    }
+    
+    function showLoading() {
+      document.querySelector('.loading').style.display = 'block';
+      document.getElementById('error-message').style.display = 'none';
+    }
+    
+    function hideLoading() {
+      document.querySelector('.loading').style.display = 'none';
+    }
+    
+    // Initialize agent
+    async function initializeAgent(useAudio = true) {
+      showLoading();
+      
+      try {
+        // Request microphone permission if using audio
+        if (useAudio) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // Stop the stream immediately - we just needed to get permission
+            stream.getTracks().forEach(track => track.stop());
+            audioPermissionGranted = true;
+          } catch (audioError) {
+            console.warn('Microphone access denied:', audioError);
+            showError('Microphone access denied. You can still use text chat.');
+            useAudio = false;
+          }
+        }
+        
+        // Load the ElevenLabs script if not already loaded
+        if (!agentLoaded) {
+          await loadElevenLabsScript();
+          agentLoaded = true;
+        }
+        
+        // Configure the agent based on mode
+        const agentElement = document.querySelector('elevenlabs-convai');
+        if (agentElement) {
+          if (!useAudio) {
+            agentElement.setAttribute('audio-disabled', 'true');
+            agentElement.setAttribute('text-only', 'true');
+          }
+        }
+        
+        // Show the agent
+        document.getElementById('startup-container').style.display = 'none';
+        document.getElementById('agent-container').style.display = 'block';
+        document.getElementById('status-bar').style.display = 'block';
+        
+        // Update status
+        if (!useAudio) {
+          document.getElementById('status-bar').textContent = '⌨️ Text Mode';
+        }
+        
+      } catch (error) {
+        console.error('Failed to initialize agent:', error);
+        showError('Failed to initialize the AI agent. Please refresh and try again.');
+      }
+    }
+    
+    // Load ElevenLabs script dynamically
+    function loadElevenLabsScript() {
+      return new Promise((resolve, reject) => {
+        if (document.querySelector('script[src*="elevenlabs"]')) {
+          resolve(); // Already loaded
+          return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+        script.async = true;
+        script.type = 'text/javascript';
+        
+        script.onload = () => {
+          // Give the script a moment to initialize
+          setTimeout(resolve, 500);
+        };
+        
+        script.onerror = () => {
+          reject(new Error('Failed to load ElevenLabs script'));
+        };
+        
+        document.body.appendChild(script);
+      });
+    }
+    
+    // Event listeners
+    document.getElementById('start-voice').addEventListener('click', () => {
+      initializeAgent(true);
+    });
+    
+    document.getElementById('start-text').addEventListener('click', () => {
+      initializeAgent(false);
+    });
+    
+    // Check for HTTPS
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+      showError('⚠️ This page requires HTTPS for microphone access. Voice chat may not work properly.');
+    }
+    
+    // Handle visibility change (useful for kiosk mode)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && agentLoaded) {
+        const statusBar = document.getElementById('status-bar');
+        if (statusBar) {
+          statusBar.textContent = '🟢 Connected';
+        }
+      }
+    });
+    
+    // Add keyboard shortcut to return to start
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && agentLoaded) {
+        if (confirm('Return to start screen?')) {
+          location.reload();
+        }
+      }
+    });
+    
+    // Error boundary for the widget
+    window.addEventListener('error', (e) => {
+      if (e.message && e.message.includes('elevenlabs')) {
+        console.error('ElevenLabs widget error:', e);
+        showError('Agent connection issue. Please try text mode or refresh the page.');
+      }
+    });
+  </script>
 </body>
 </html>
