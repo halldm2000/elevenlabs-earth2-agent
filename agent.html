@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Earth-2 AI Weather Expert</title>
   <style>
     * {
@@ -33,11 +36,28 @@
       position: fixed;
       top: 0;
       left: 0;
-      background: white;
+      background: #000; /* Changed from white to black */
     }
     
     #agent-container.active {
       display: block;
+    }
+    
+    /* Try to override the ElevenLabs widget background */
+    elevenlabs-convai {
+      background: #000 !important;
+    }
+    
+    /* Target the widget's shadow DOM if possible */
+    elevenlabs-convai::part(container) {
+      background: #000 !important;
+    }
+    
+    /* Additional override attempts */
+    .elevenlabs-convai,
+    .elevenlabs-convai-widget,
+    [class*="elevenlabs"] {
+      background: #000 !important;
     }
   </style>
 </head>
@@ -45,7 +65,10 @@
   <div id="loading">Initializing...</div>
   
   <div id="agent-container">
-    <elevenlabs-convai agent-id="agent_0601k5f668q9fqj8xq8c2fz49fqm"></elevenlabs-convai>
+    <elevenlabs-convai 
+      agent-id="agent_0601k5f668q9fqj8xq8c2fz49fqm"
+      style="background: #000 !important;">
+    </elevenlabs-convai>
   </div>
   
   <script>
@@ -66,6 +89,24 @@
             // Show agent
             document.getElementById('loading').style.display = 'none';
             document.getElementById('agent-container').classList.add('active');
+            
+            // Try to inject styles into the widget after it loads
+            setTimeout(() => {
+              const widget = document.querySelector('elevenlabs-convai');
+              if (widget && widget.shadowRoot) {
+                try {
+                  const style = document.createElement('style');
+                  style.textContent = `
+                    * { background: #000 !important; }
+                    body { background: #000 !important; }
+                    .container { background: #000 !important; }
+                  `;
+                  widget.shadowRoot.appendChild(style);
+                } catch (e) {
+                  console.log('Could not modify shadow DOM');
+                }
+              }
+            }, 1000);
           }, 500);
         };
         
