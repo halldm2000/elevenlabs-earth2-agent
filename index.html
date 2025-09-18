@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Permissions-Policy" content="camera=*, microphone=*, geolocation=*">
   <title>Earth-2 AI Weather Expert</title>
   <style>
     * {
@@ -22,73 +21,96 @@
       overflow: hidden;
     }
     
-    /* Compact mode for iframe embedding */
-    .iframe-mode {
-      background: white !important;
-    }
-    
-    .iframe-mode #init-container {
-      box-shadow: none !important;
-      border-radius: 0 !important;
-      padding: 15px !important;
-      background: transparent !important;
-    }
-    
-    #init-container {
+    .container {
       text-align: center;
+      padding: 20px;
       background: white;
-      padding: 2rem;
       border-radius: 15px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      max-width: 450px;
       width: 90%;
     }
     
-    #init-container h2 {
+    .iframe-mode .container {
+      box-shadow: none;
+      border-radius: 0;
+      max-width: 100%;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    h2 {
       color: #333;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
       font-size: 1.5rem;
     }
     
-    #init-container p {
+    .iframe-mode h2 {
+      font-size: 1.2rem;
+    }
+    
+    p {
       color: #666;
       margin-bottom: 20px;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
+      line-height: 1.5;
     }
     
     .button-group {
       display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
     }
     
-    .init-button {
+    .btn {
       background: linear-gradient(135deg, #0071c5 0%, #76b900 100%);
       color: white;
       border: none;
-      padding: 12px 24px;
+      padding: 14px 28px;
       font-size: 1rem;
-      border-radius: 25px;
+      border-radius: 30px;
       cursor: pointer;
       transition: all 0.3s;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      flex: 1;
-      min-width: 120px;
       justify-content: center;
+      gap: 10px;
+      text-decoration: none;
+      font-weight: 500;
     }
     
-    .init-button:hover {
+    .btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
     }
     
-    .init-button.text-mode {
+    .btn-secondary {
       background: white;
       color: #0071c5;
       border: 2px solid #0071c5;
+    }
+    
+    .btn-popup {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    }
+    
+    .warning {
+      background: #fff3e0;
+      border: 1px solid #ffb74d;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: #e65100;
+    }
+    
+    .warning strong {
+      display: block;
+      margin-bottom: 5px;
     }
     
     #agent-container {
@@ -105,280 +127,206 @@
       display: block;
     }
     
-    .status-bar {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 5px 15px;
+    .qr-section {
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+    
+    .qr-code {
+      width: 150px;
+      height: 150px;
+      margin: 15px auto;
+      background: #f5f5f5;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: #999;
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
       border-radius: 20px;
       font-size: 0.85rem;
-      z-index: 1000;
-      display: none;
+      margin-top: 10px;
     }
     
-    .status-bar.active {
-      display: block;
-    }
-    
-    .error-msg {
-      color: #d32f2f;
-      margin-top: 15px;
-      font-size: 0.9rem;
-      display: none;
-      padding: 10px;
+    .status-error {
       background: #ffebee;
-      border-radius: 5px;
+      color: #c62828;
     }
     
-    .loading {
-      display: none;
-      margin-top: 15px;
-      color: #666;
-    }
-    
-    .loading.active {
-      display: block;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    
-    .spinner {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid #ddd;
-      border-top-color: #0071c5;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-right: 8px;
-    }
-    
-    /* Responsive for small iframe */
-    @media (max-width: 300px), (max-height: 300px) {
-      #init-container h2 { font-size: 1.1rem; }
-      #init-container p { display: none; }
-      .init-button { padding: 8px 16px; font-size: 0.9rem; min-width: 100px; }
+    .status-success {
+      background: #e8f5e9;
+      color: #2e7d32;
     }
   </style>
 </head>
 <body>
-  <!-- Initialization UI -->
-  <div id="init-container">
-    <h2>🌍 Earth-2 AI Assistant</h2>
-    <p>Interactive AI Weather Expert powered by NVIDIA Earth2Studio</p>
+  <div class="container">
+    <h2>🌍 Earth-2 AI Weather Expert</h2>
     
-    <div class="button-group">
-      <button class="init-button" id="voice-btn" onclick="startAgent(true)">
-        🎤 Voice Chat
-      </button>
-      <button class="init-button text-mode" onclick="startAgent(false)">
-        💬 Text Only
-      </button>
+    <div id="main-content">
+      <!-- Default content -->
+      <p>Interactive AI assistant powered by NVIDIA Earth2Studio</p>
+      
+      <div class="button-group">
+        <button class="btn" onclick="tryDirectAgent()">
+          🎤 Try Voice Chat
+        </button>
+        
+        <button class="btn btn-secondary" onclick="startTextMode()">
+          💬 Text Chat Only
+        </button>
+        
+        <button class="btn btn-popup" onclick="openPopup()">
+          🚀 Open in New Window
+          <span style="font-size: 0.8em">(Voice Works!)</span>
+        </button>
+      </div>
+      
+      <div id="iframe-warning" class="warning" style="display: none;">
+        <strong>⚠️ Microphone Blocked in Embedded View</strong>
+        Voice chat requires opening in a new window. Use the button above or scan the QR code below.
+      </div>
+      
+      <div class="qr-section">
+        <p style="font-size: 0.9rem; color: #666;">
+          📱 Scan for mobile access:
+        </p>
+        <div class="qr-code">
+          [QR Code Here]
+        </div>
+      </div>
+      
+      <div id="status-msg"></div>
     </div>
-    
-    <div class="loading" id="loading">
-      <span class="spinner"></span>
-      Initializing...
-    </div>
-    
-    <div class="error-msg" id="error-msg"></div>
   </div>
   
-  <!-- Agent Container -->
+  <!-- Hidden agent container -->
   <div id="agent-container">
-    <div class="status-bar" id="status-bar">
-      <span id="status-text">🔴 Initializing...</span>
-    </div>
-    <elevenlabs-convai 
-      agent-id="agent_0601k5f668q9fqj8xq8c2fz49fqm"
-      allow-markdown="true">
-    </elevenlabs-convai>
+    <elevenlabs-convai agent-id="agent_0601k5f668q9fqj8xq8c2fz49fqm"></elevenlabs-convai>
   </div>
   
   <script>
-    // Detect if we're in an iframe
+    // Check if we're in an iframe
     const isIframe = window.self !== window.top;
-    const isLocalhost = window.location.hostname === 'localhost' || 
-                       window.location.hostname === '127.0.0.1';
-    const isHTTPS = window.location.protocol === 'https:';
+    let popupWindow = null;
     
-    // Apply iframe-specific styling
+    // Apply iframe styling if embedded
     if (isIframe) {
       document.body.classList.add('iframe-mode');
-      console.log('Running in iframe mode');
+      document.getElementById('iframe-warning').style.display = 'block';
+      console.log('Running in iframe - microphone access will be limited');
     }
     
-    // Check HTTPS requirement
-    if (!isHTTPS && !isLocalhost) {
-      showError('⚠️ HTTPS required for microphone access. Voice chat may not work.');
+    function showStatus(message, isError = false) {
+      const statusEl = document.getElementById('status-msg');
+      statusEl.className = 'status ' + (isError ? 'status-error' : 'status-success');
+      statusEl.textContent = message;
+      statusEl.style.display = 'inline-block';
     }
     
-    function showError(message) {
-      const errorEl = document.getElementById('error-msg');
-      errorEl.textContent = message;
-      errorEl.style.display = 'block';
-      document.getElementById('loading').classList.remove('active');
-    }
-    
-    function showLoading() {
-      document.getElementById('loading').classList.add('active');
-      document.getElementById('error-msg').style.display = 'none';
-    }
-    
-    function hideLoading() {
-      document.getElementById('loading').classList.remove('active');
-    }
-    
-    function updateStatus(text, color = '#4caf50') {
-      const statusBar = document.getElementById('status-bar');
-      const statusText = document.getElementById('status-text');
-      statusBar.classList.add('active');
-      statusBar.style.background = color;
-      statusText.textContent = text;
-    }
-    
-    async function startAgent(useVoice) {
-      showLoading();
-      
+    async function tryDirectAgent() {
       try {
-        let audioGranted = false;
+        // This will likely fail in an iframe
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
         
-        // Try to get microphone permission if voice requested
-        if (useVoice) {
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            stream.getTracks().forEach(track => track.stop());
-            audioGranted = true;
-            console.log('Microphone permission granted');
-          } catch (err) {
-            console.warn('Microphone permission denied:', err);
-            
-            // In iframe, fail silently and switch to text
-            if (isIframe) {
-              useVoice = false;
-              console.log('Switching to text mode in iframe');
-            } else {
-              showError('Microphone access denied. Switching to text mode.');
-              useVoice = false;
+        // If we get here, microphone worked!
+        showStatus('✓ Microphone access granted!', false);
+        loadAgent(true);
+        
+      } catch (err) {
+        console.error('Microphone denied:', err);
+        
+        if (isIframe) {
+          showStatus('❌ Microphone blocked in embedded view. Please use "Open in New Window"', true);
+          // Auto-open popup after 2 seconds
+          setTimeout(() => {
+            if (confirm('Voice chat requires a new window. Open now?')) {
+              openPopup();
             }
-          }
-        }
-        
-        // Load ElevenLabs script dynamically
-        if (!window.elevenlabsLoaded) {
-          await loadElevenLabsScript();
-          window.elevenlabsLoaded = true;
-        }
-        
-        // Configure agent based on mode
-        const agentEl = document.querySelector('elevenlabs-convai');
-        if (agentEl) {
-          if (!useVoice) {
-            agentEl.setAttribute('audio-disabled', 'true');
-            agentEl.setAttribute('input-mode', 'text');
-          }
-          
-          // Set iframe-specific attributes if needed
-          if (isIframe) {
-            agentEl.setAttribute('compact-mode', 'true');
-          }
-        }
-        
-        // Hide init UI and show agent
-        hideLoading();
-        document.getElementById('init-container').style.display = 'none';
-        document.getElementById('agent-container').classList.add('active');
-        
-        // Update status
-        if (useVoice && audioGranted) {
-          updateStatus('🎤 Voice Mode Active', 'rgba(76, 175, 80, 0.9)');
+          }, 1000);
         } else {
-          updateStatus('💬 Text Mode Active', 'rgba(33, 150, 243, 0.9)');
+          showStatus('❌ Microphone access denied. Please check browser permissions.', true);
         }
-        
-        // Notify parent frame if in iframe
-        if (isIframe && window.parent) {
-          window.parent.postMessage({
-            type: 'agent-ready',
-            mode: useVoice ? 'voice' : 'text'
-          }, '*');
-        }
-        
-      } catch (error) {
-        console.error('Failed to initialize agent:', error);
-        hideLoading();
-        showError('Failed to initialize. Please refresh and try again.');
       }
     }
     
-    function loadElevenLabsScript() {
-      return new Promise((resolve, reject) => {
-        const existing = document.querySelector('script[src*="elevenlabs"]');
-        if (existing) {
-          resolve();
-          return;
-        }
-        
+    function startTextMode() {
+      showStatus('Starting text-only mode...', false);
+      loadAgent(false);
+    }
+    
+    async function loadAgent(useVoice) {
+      // Load ElevenLabs script
+      if (!document.querySelector('script[src*="elevenlabs"]')) {
         const script = document.createElement('script');
         script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
         script.async = true;
-        script.type = 'text/javascript';
-        
-        script.onload = () => {
-          console.log('ElevenLabs script loaded');
-          setTimeout(resolve, 500); // Give it time to initialize
-        };
-        
-        script.onerror = (err) => {
-          console.error('Failed to load ElevenLabs script:', err);
-          reject(new Error('Failed to load ElevenLabs widget'));
-        };
-        
         document.body.appendChild(script);
-      });
-    }
-    
-    // Listen for messages from parent frame
-    if (isIframe) {
-      window.addEventListener('message', (event) => {
-        // Be cautious about origins in production
-        console.log('Received message:', event.data);
         
-        if (event.data === 'start-voice') {
-          startAgent(true);
-        } else if (event.data === 'start-text') {
-          startAgent(false);
-        } else if (event.data === 'ping') {
-          event.source.postMessage('pong', event.origin);
-        }
-      });
+        // Wait for load
+        await new Promise(resolve => {
+          script.onload = () => setTimeout(resolve, 500);
+        });
+      }
       
-      // Let parent know we're loaded
-      if (window.parent) {
-        window.parent.postMessage({ type: 'iframe-loaded' }, '*');
+      // Configure agent
+      const agentEl = document.querySelector('elevenlabs-convai');
+      if (!useVoice) {
+        agentEl.setAttribute('audio-disabled', 'true');
+      }
+      
+      // Show agent
+      document.getElementById('main-content').style.display = 'none';
+      document.getElementById('agent-container').classList.add('active');
+    }
+    
+    function openPopup() {
+      // Close existing popup if any
+      if (popupWindow && !popupWindow.closed) {
+        popupWindow.close();
+      }
+      
+      // Calculate center position
+      const width = 500;
+      const height = 700;
+      const left = (screen.width - width) / 2;
+      const top = (screen.height - height) / 2;
+      
+      // Open popup
+      popupWindow = window.open(
+        'https://halldm2000.github.io/elevenlabs-earth2-agent/agent.html',
+        'Earth2Agent',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
+      
+      if (popupWindow) {
+        showStatus('✓ Opened in new window!', false);
+      } else {
+        showStatus('❌ Popup blocked. Please allow popups for this site.', true);
       }
     }
     
-    // Add keyboard shortcut to restart
+    // Listen for Escape key
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        if (confirm('Restart the agent?')) {
-          location.reload();
-        }
+      if (e.key === 'Escape' && document.getElementById('agent-container').classList.contains('active')) {
+        location.reload();
       }
     });
     
-    // Handle visibility changes (useful for conference displays)
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) {
-        console.log('Page visible again');
-        // Could reconnect agent here if needed
-      }
-    });
+    // Generate QR code (you'll need to add a QR library or generate this server-side)
+    // For now, just show the URL
+    document.querySelector('.qr-code').innerHTML = `
+      <div style="padding: 10px; word-break: break-all; font-size: 0.7rem;">
+        https://halldm2000.github.io/elevenlabs-earth2-agent/
+      </div>
+    `;
   </script>
 </body>
 </html>
