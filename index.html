@@ -30,7 +30,7 @@
       padding: 20px 50px;
       font-size: 1.3rem;
       font-weight: 600;
-      border-radius: 50px;
+      border-radius: 10px;
       cursor: pointer;
       transition: all 0.3s;
       display: inline-flex;
@@ -55,8 +55,9 @@
   
   <script>
     function openVoiceChat() {
-      const width = 500;
-      const height = 700;
+      // Smaller, more compact window
+      const width = 380;  // Reduced from 500
+      const height = 500; // Reduced from 700
       const left = (screen.width - width) / 2;
       const top = (screen.height - height) / 2;
       
