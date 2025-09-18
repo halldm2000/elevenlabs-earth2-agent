@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Earth-2 AI Weather Expert - Voice Assistant</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0071c5 0%, #76b900 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .header h1 {
+      color: #333;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .header p {
+      color: #666;
+      font-size: 0.9rem;
+      margin-top: 5px;
+    }
+    
+    .nvidia-badge {
+      display: inline-block;
+      background: #76b900;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      margin-left: 10px;
+    }
+    
+    #start-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .welcome-card {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 500px;
+      width: 100%;
+    }
+    
+    .welcome-card h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 2rem;
+    }
+    
+    .welcome-card p {
+      color: #666;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    
+    .start-button {
+      background: linear-gradient(135deg, #0071c5 0%, #76b900 100%);
+      color: white;
+      border: none;
+      padding: 18px 50px;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      box-shadow: 0 4px 20px rgba(0,113,197,0.3);
+    }
+    
+    .start-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(0,113,197,0.4);
+    }
+    
+    .start-button:active {
+      transform: translateY(-1px);
+    }
+    
+    #agent-container {
+      display: none;
+      width: 100%;
+      height: 100vh;
+      background: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+    
+    #agent-container.active {
+      display: block;
+    }
+    
+    .status-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 25px;
+      font-size: 0.9rem;
+      display: none;
+      z-index: 10000;
+      animation: pulse 2s infinite;
+    }
+    
+    .status-indicator.active {
+      display: block;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+    
+    .error-message {
+      display: none;
+      background: #ff5252;
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+    
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+    
+    .feature {
+      padding: 15px;
+      background: #f5f5f5;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    
+    .feature-icon {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="start-container">
+    <div class="welcome-card">
+      <h2>🌍 Welcome!</h2>
+      <p>
+        <strong>NVIDIA Earth-2 AI Weather Expert</strong><br>
+        Powered by Earth2Studio & ElevenLabs AI
+      </p>
+      
+      <button class="start-button" onclick="initializeAgent()">
+        🎤 Start Voice Assistant
+      </button>
+      
+      <div class="error-message" id="error-msg"></div>
+      
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">🌡️</div>
+          <strong>Weather Forecasting</strong><br>
+          10-day predictions in seconds
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🌀</div>
+          <strong>Extreme Events</strong><br>
+          Hurricane & storm tracking
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🗺️</div>
+          <strong>Global Coverage</strong><br>
+          25km resolution worldwide
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="agent-container">
+    <div class="status-indicator" id="status">
+      🎤 Voice Assistant Active
+    </div>
+    <elevenlabs-convai 
+      agent-id="agent_0601k5f668q9fqj8xq8c2fz49fqm">
+    </elevenlabs-convai>
+  </div>
+  
+  <script>
+    let agentInitialized = false;
+    
+    async function initializeAgent() {
+      const button = document.querySelector('.start-button');
+      button.disabled = true;
+      button.textContent = '🔄 Initializing...';
+      
+      try {
+        // Request microphone permission
+        console.log('Requesting microphone permission...');
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // Stop the test stream
+        stream.getTracks().forEach(track => track.stop());
+        console.log('Microphone permission granted');
+        
+        // Load ElevenLabs script if not already loaded
+        if (!agentInitialized) {
+          console.log('Loading ElevenLabs widget...');
+          
+          const script = document.createElement('script');
+          script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+          script.async = true;
+          script.type = 'text/javascript';
+          
+          await new Promise((resolve, reject) => {
+            script.onload = () => {
+              console.log('ElevenLabs script loaded');
+              setTimeout(resolve, 1000); // Give it time to initialize
+            };
+            script.onerror = reject;
+            document.body.appendChild(script);
+          });
+          
+          agentInitialized = true;
+        }
+        
+        // Hide start screen and show agent
+        document.getElementById('start-container').style.display = 'none';
+        document.getElementById('agent-container').classList.add('active');
+        document.getElementById('status').classList.add('active');
+        
+        // Update window title
+        document.title = 'Earth-2 AI Expert - Active';
+        
+        // Notify parent window if in popup
+        if (window.opener) {
+          window.opener.postMessage({ type: 'agent-started', mode: 'voice' }, '*');
+        }
+        
+      } catch (error) {
+        console.error('Failed to initialize:', error);
+        
+        const errorEl = document.getElementById('error-msg');
+        errorEl.style.display = 'block';
+        
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+          errorEl.textContent = '🎤 Microphone access is required for voice chat. Please allow microphone access and refresh.';
+        } else {
+          errorEl.textContent = '❌ Failed to initialize the assistant. Error: ' + error.message;
+        }
+        
+        button.disabled = false;
+        button.textContent = '🎤 Try Again';
+      }
+    }
+    
+    // Auto-resize for popup windows
+    if (window.opener) {
+      // We're in a popup
+      console.log('Running in popup window mode');
+    }
+    
+    // Handle Escape key to go back
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('agent-container').classList.contains('active')) {
+        if (confirm('Close the assistant?')) {
+          location.reload();
+        }
+      }
+    });
+    
+    // Handle window close
+    window.addEventListener('beforeunload', () => {
+      if (window.opener) {
+        window.opener.postMessage({ type: 'agent-closed' }, '*');
+      }
+    });
+    
+    // Check for HTTPS
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+      const errorEl = document.getElementById('error-msg');
+      errorEl.style.display = 'block';
+      errorEl.textContent = '⚠️ This page must be served over HTTPS for microphone access.';
+    }
+  </script>
+</body>
+</html>
